@@ -1,0 +1,37 @@
+import java.io.DataOutputStream;
+import java.io.IOException;
+import lejos.robotics.navigation.Pose;
+
+public class DataOut { // Lähettää dataa robotilta Pc:lle
+
+	private DataOutputStream out;
+
+	public DataOut(DataOutputStream o) {
+		this.out = o;
+	}
+
+	public void out(Pose pose) { // Lähettää Pc:lle Pose-olion, joka pitää sisällään koordinaattipisteet.
+		try {
+			pose.dumpObject(out);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+
+	public void out(int i) { // Lähettää Pc:lle näytteenottopisteen numeron ja kuluneen ajan
+		try {
+			out.writeInt(i);
+			out.flush();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+
+	public void lopeta() { // Sulkee output streamin.
+		try {
+			out.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+}

@@ -1,0 +1,45 @@
+package model;
+
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.util.List;
+
+import lejos.robotics.navigation.Waypoint;
+
+public class PcDataOut { // Lähettää dataa Pc:ltä
+
+	private DataOutputStream out;
+
+	public PcDataOut(DataOutputStream out) { // Saa output stream olion parametrinaan
+		this.out = out;
+	}
+
+	public void out(List<Waypoint> lista) { // Saa LineMap olion (kartan) parametrinaan ja lähettää sen robotille
+		try {
+			lista.add(new Waypoint(-1, -1));
+			for (Waypoint a : lista) {
+				a.dumpObject(out);
+				System.out.println(a);
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+
+	public void out(int i) {
+		try {
+			out.writeInt(i);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+
+	public void lopeta() { // Sulkee output streamin
+		try {
+			out.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+
+}

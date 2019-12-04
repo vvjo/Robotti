@@ -1,0 +1,152 @@
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.File;
+import java.io.IOException;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.util.ArrayList;
+import java.util.Collection;
+import lejos.hardware.motor.EV3LargeRegulatedMotor;
+import lejos.hardware.motor.EV3MediumRegulatedMotor;
+import lejos.hardware.port.MotorPort;
+import lejos.robotics.RegulatedMotor;
+import lejos.robotics.navigation.Waypoint;
+
+/**
+ * Robotin pääohjelma
+ * @author Sami Tuppurainen, Väinö Kojo
+ *
+ */
+public class Main {
+
+	public static void main(String[] args) {
+		/**
+		 * Moottoreiden alustus
+		 */
+		RegulatedMotor X = new EV3LargeRegulatedMotor(MotorPort.A);
+		RegulatedMotor Y = new EV3LargeRegulatedMotor(MotorPort.B);
+		RegulatedMotor C = new EV3MediumRegulatedMotor(MotorPort.C);
+		X.setSpeed(100);
+		Y.setSpeed(100);
+<<<<<<< .mine
+		C.setSpeed(100);
+		/**
+		 * Yhteyden luonti robotin ja tietokoneen välille
+		 */
+		Socket s = null;
+||||||| .r157
+=======
+		C.setSpeed(100);
+
+		Socket s = null; // Soketin alustus
+>>>>>>> .r173
+		try {
+			ServerSocket serveri = new ServerSocket(1111);
+			s = serveri.accept();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		/**
+		 * Inputstreamin, DataIn ja hätäseis säikeiden luonti
+		 */
+		DataInputStream ins = null;
+		try {
+			ins = new DataInputStream(s.getInputStream());
+		} catch (IOException e1) {
+			e1.printStackTrace();
+		}
+<<<<<<< .mine
+		DataIn in = new DataIn(ins);
+		Stop seis = new Stop();
+		in.start();		
+||||||| .r157
+=======
+		DataIn in = new DataIn(ins); // DataIn säikeen luonti
+		DataOut out = new DataOut(outs); // DataOut out olion luonti
+		Stop in2 = new Stop();
+		in.start(); // DataIn in säikeen käynnistys
+>>>>>>> .r173
+		
+
+		try {
+			in.join();	
+			in2.start();
+			
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		} 
+		seis.start();
+		in.lopeta();
+		
+		/**
+		 * Waypoint listan täyttö tietokoneelta tulleilla waypointeilla
+		 */
+		ArrayList<Waypoint> pisteet = in.returnPisteet();
+		/**
+		 * Boolean rotated katsoo onko kynä jo alhaalla tai ylhäällä
+		 */
+		boolean rotated = false;
+		/**
+		 * X ja Y moottoreita liikutetaan waypointtien x ja y arvojen mukaan
+		 * C moottoria liikutetaan kun saadaan viivan alku tai loppu waypoint(1000,1000)
+		 */
+		Waypoint nosto2 = new Waypoint(1000.0, 1000.0);
+		boolean rotated = false;
+		for (Waypoint a : pisteet) {
+<<<<<<< .mine
+			if (a.getX() < 999.0) {
+				X.rotateTo((int) a.getX());
+				X.waitComplete();
+				Y.rotateTo((int) a.getY() * (-1));
+||||||| .r157
+=======
+			if (a.getX() < 999.0) {
+
+				X.rotateTo((int) a.getX());
+				X.waitComplete();
+				Y.rotateTo((int) a.getY() * (-1));
+>>>>>>> .r173
+				Y.waitComplete();
+<<<<<<< .mine
+				if((C.getTachoCount() > 22 && C.getTachoCount() < 27) && rotated == false) {
+					C.rotateTo(-12);
+					rotated=true;
+				}
+||||||| .r157
+=======
+				if((C.getTachoCount() > 22 && C.getTachoCount() < 27) && rotated == false) {
+				C.rotateTo(-12);
+				rotated=true;
+				}
+				
+>>>>>>> .r173
+			} else {
+<<<<<<< .mine
+				C.rotateTo(25);		
+				rotated=false;
+||||||| .r157
+=======
+				C.rotateTo(25);
+				
+				rotated=false;
+>>>>>>> .r173
+			}
+<<<<<<< .mine
+	
+		}	C.rotateTo(0);
+		
+		seis.lopeta();
+||||||| .r157
+=======
+	
+		}	C.rotateTo(0);
+		System.out.println("nachoballs");
+		/*
+		 * try { //sulkee input ja output streamit ja lopettaa säikeen. in.lopeta();
+		 * out.lopeta(); ins.close(); outs.close(); } catch (IOException e) { // TODO
+		 * Auto-generated catch block e.printStackTrace(); }
+		 */
+
+>>>>>>> .r173
+	}
+}

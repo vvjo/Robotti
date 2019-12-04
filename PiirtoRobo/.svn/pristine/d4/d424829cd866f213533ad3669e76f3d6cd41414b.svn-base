@@ -1,0 +1,62 @@
+
+import java.io.DataInputStream;
+import java.io.IOException;
+import java.net.Socket;
+import java.util.ArrayList;
+import java.util.List;
+
+import lejos.robotics.mapping.LineMap;
+import lejos.robotics.navigation.Waypoint;
+import lejos.utility.Delay;
+
+public class DataIn extends Thread { // Dataa vastaanottava säie
+
+	DataInputStream in;
+
+	ArrayList<Waypoint> pisteet = new ArrayList<Waypoint>();
+
+	LineMap lm = new LineMap();
+
+	private volatile boolean käynnissä = true;
+	public DataIn() {
+		
+	}
+	public DataIn(DataInputStream in) { // Saa input streamin parametrinaan.
+		this.in = in;
+	}
+
+	public ArrayList<Waypoint> returnPisteet() {
+		return pisteet;
+	}
+
+	public void run() {
+		Waypoint wp0 = new Waypoint(10, 10); // Alustaa näytteenottopisteet.
+		while (käynnissä) {
+			try {
+				wp0.loadObject(in); // Hakee Pc:ltä näytteenotto pisteet ja tallentaa ne listaan.
+			//	System.out.println(wp0.getX());
+			//	System.out.println(wp0.getY());
+
+				if (wp0.getX() < 0) {
+					käynnissä = false;
+				}
+				pisteet.add(new Waypoint(wp0.getX(), wp0.getY()));
+			
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				System.out.println("Exception odotetaan luettavaa");
+
+			}
+		}
+		lopeta();
+	}
+
+	public void lopeta() { // Lopettaa säikeen
+		try {
+			in.close();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+}

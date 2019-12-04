@@ -1,0 +1,59 @@
+import java.io.DataInputStream;
+import java.io.IOException;
+import java.util.ArrayList;
+import lejos.robotics.navigation.Waypoint;
+
+/**
+ * Dataa vastaanottava säie
+ * @author Väinö Kojo, Sami Tuppurainen
+ *
+ */
+public class DataIn extends Thread { 
+	DataInputStream in;
+	ArrayList<Waypoint> pisteet = new ArrayList<Waypoint>();
+
+	private volatile boolean käynnissä = true;
+
+	public DataIn() {
+
+	}
+
+	public DataIn(DataInputStream in) {
+		this.in = in;
+	}
+
+	/**
+	 * @return Palauttaa Waypoint listan
+	 */
+	public ArrayList<Waypoint> returnPisteet() {
+		return pisteet;
+	}
+
+	/**
+	 * Säie odottaa waypoint olioita tietokoneelta ja tallentaa ne listaan
+	 * Kun viimeinen waypoint (-1, -1) tulee tietokoneelta lista on täysi ja säie suljetaan
+	 */
+	public void run() {
+		Waypoint wp = new Waypoint(10, 10);
+		while (wp.getX() > 0) {
+			try {
+				wp.loadObject(in);
+				pisteet.add(new Waypoint(wp.getX(), wp.getY()));
+			} catch (Exception e) {
+				System.out.println("Exception odotetaan luettavaa");
+			}
+		}  	  
+	}
+
+	/**
+	 * Sulkee säikeen
+	 */
+	public void lopeta() { 
+		try {
+			in.close();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+}

@@ -1,0 +1,206 @@
+package main.view;
+
+import java.awt.Desktop;
+import java.io.DataOutputStream;
+import java.io.File;
+import java.io.IOException;
+import java.net.Socket;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.UnknownHostException;
+import java.util.ArrayList;
+import javafx.event.EventHandler;
+import javafx.fxml.FXML;
+import javafx.scene.canvas.Canvas;
+import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.input.MouseEvent;
+import javafx.scene.paint.Color;
+import javafx.stage.FileChooser;
+import lejos.robotics.navigation.Waypoint;
+import main.Main;
+import model.PcDataOut;
+import model.Tiedostonkäsittely;
+import model.WP;
+
+public class PiirtoSceneController {
+	@FXML
+	private Canvas piirtoCanvas;
+	@FXML
+	private Label nimi;
+	@FXML
+	private Button connectBtn;
+	@FXML
+	private Button sendBtn;
+	@FXML
+	private Button stopBtn;
+	private GraphicsContext gc;
+	private Main main;
+	private PcDataOut out = null;
+	private FileChooser chooser;
+	private File file;
+	private ArrayList<Waypoint> lista = new ArrayList<>(); // Transmittable
+	private ArrayList<WP> wplista = new ArrayList<>(); // Serializable
+
+	public PiirtoSceneController() {
+	}
+
+	@FXML
+	private void sendPiirros() {	//Lähettää waypoint-oliolistan robotille
+		System.out.println(lista.size() + " :kokoinen lista lähetetty");
+		out.out(lista);
+	}
+
+	@FXML
+	private void stop() {
+		out.out(0);
+		System.out.println("0 sent");
+	}
+
+	@FXML
+	public void roboConnect() {		//Ottaa yhteyden robottiin ja luo PcDataOut olion
+									//Asettaa send ja stop painikkeet available, kun yhteys muodostuu
+		Socket s = null;
+		try {
+			s = new Socket("10.0.1.1", 1111); // Socketin alustus.
+			System.out.println("Soketti luotu");
+		} catch (UnknownHostException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		DataOutputStream outs = null;
+		try {
+			outs = new DataOutputStream(s.getOutputStream());
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		out = new PcDataOut(outs);
+		connectBtn.setStyle("-fx-background-color: green; ");
+		connectBtn.setDisable(true);
+		stopBtn.setDisable(false);
+		sendBtn.setDisable(false);
+	}
+
+	@FXML
+	private void clearPiirros() {	//Tyhjentää wp ja waypoint listat ja canvasin piirroksista
+		gc.setFill(Color.WHITE);
+		gc.fillRect(1, 1, piirtoCanvas.getWidth() - 2, piirtoCanvas.getHeight() - 2);
+		lista.clear();
+		wplista.clear();
+		gc.setFill(Color.BLACK);
+	}
+
+	@FXML
+	private void save() {	//Tekee waypoint-oliolistasta wp-oliolistan ja tallentaa sen valitsemaasi paikkaa dat-tiedostoon
+		for (int i = 0; i < lista.size(); i++) {
+			wplista.add(new WP(lista.get(i)));
+		}
+		chooser = new FileChooser();
+		FileChooser.ExtensionFilter extFilter = new FileChooser.ExtensionFilter("dat files (*.dat)", "*.dat");
+		chooser.getExtensionFilters().add(extFilter);
+		file = chooser.showSaveDialog(main.getPrimaryStage());
+		if (file != null) {
+			Tiedostonkäsittely.kirjoitaTiedosto(file.getAbsolutePath(), wplista);
+			System.out.println(wplista.size());
+		}
+	}
+
+	@FXML
+	private void load() {	//Lataa valitsemasi piirustuksen wp-oliolistan dat-tiedostosta 
+		wplista.clear();
+		lista.clear();
+		clearPiirros();
+		chooser = new FileChooser();
+		file = chooser.showOpenDialog(main.getPrimaryStage());
+		FileChooser.ExtensionFilter extFilter = new FileChooser.ExtensionFilter("dat files (*.dat)", "*.dat");
+		chooser.getExtensionFilters().add(extFilter);
+		if (file != null) {
+			wplista = (ArrayList<WP>) Tiedostonkäsittely.lueTiedosto(file.getAbsolutePath());
+			System.out.println(wplista.size());
+		}
+		for (int i = 0; i < wplista.size(); i++) {
+			lista.add(new Waypoint(wplista.get(i).getX(), wplista.get(i).getY()));
+		}
+		draw();
+	}
+
+	@FXML
+	private void help() {	//Avaa selaimen ja wikipedian
+		String url = "https://en.wikipedia.org/wiki/Main_Page";
+		try {
+			Desktop.getDesktop().browse(new URI(url));
+		} catch (IOException e1) {
+			e1.printStackTrace();
+		} catch (URISyntaxException e1) {
+			e1.printStackTrace();
+		}
+	}
+
+	@FXML
+	private void close() {	//Sulkee sovelluksen
+		System.exit(-1);
+	}
+
+	private void draw() {	//Piirtää ladatun piirustuksen canvasille
+		gc.beginPath();
+		gc.moveTo(wplista.get(0).getX(), wplista.get(0).getY());
+		WP cwp = wplista.get(0);
+		for (WP swp : wplista) {
+			if (swp.getX() != 1000 && cwp.getX() != 1000 && swp.getX() != 0 && cwp.getX() != 0) {
+				gc.lineTo(swp.getX(), swp.getY());
+				gc.stroke();
+			} else {
+				gc.moveTo(swp.getX(), swp.getY());
+			}
+			cwp = swp;
+
+		}
+		gc.closePath();
+	}
+
+	private void initCanvas() {		//Alustaa canvas elementin: lisää mouse eventit canvaseille, jotta piirtäminen onnistuu
+									//Eventit tallentavat hiiren koordinaatit canvasiin nähden waypoint-olioina listaan.
+		gc = piirtoCanvas.getGraphicsContext2D();
+		gc.setFill(Color.BLACK);
+		piirtoCanvas.addEventHandler(MouseEvent.MOUSE_PRESSED, new EventHandler<MouseEvent>() {
+			@Override
+			public void handle(MouseEvent e) {
+				gc.beginPath();
+				gc.moveTo(e.getX(), e.getY());
+				gc.setStroke(Color.BLACK);
+				lista.add(new Waypoint(1000, 1000));		//Viivan aloituspiste
+				System.out.println(e.getX());
+				gc.stroke();
+			}
+		});
+		piirtoCanvas.addEventHandler(MouseEvent.MOUSE_DRAGGED, new EventHandler<MouseEvent>() {
+			@Override
+			public void handle(MouseEvent e) {
+				gc.lineTo(e.getX(), e.getY());
+				lista.add(new Waypoint(e.getX(), e.getY()));
+				gc.setStroke(Color.BLACK);
+				gc.stroke();
+				System.out.println(lista.size());
+
+			}
+		});
+		piirtoCanvas.addEventHandler(MouseEvent.MOUSE_RELEASED, new EventHandler<MouseEvent>() {
+			@Override
+			public void handle(MouseEvent e) {
+				lista.add(new Waypoint(1000, 1000));		//Viivan lopetuspiste
+				gc.closePath();
+			}
+		});
+	}
+
+	public void setMainApp(Main main) {		//Antaa mahdollisuuden kutsua main luokan primarystage oliota.
+											//Laittaa send ja stop painikkeet disabled tilaan
+		this.main = main;
+		sendBtn.setDisable(true);
+		stopBtn.setDisable(true);
+		connectBtn.setStyle("-fx-background-color: red; ");
+		initCanvas();
+	}
+}

@@ -1,0 +1,110 @@
+
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.File;
+import java.io.IOException;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.util.ArrayList;
+import java.util.Collection;
+
+import lejos.hardware.Sound;
+import lejos.hardware.motor.EV3LargeRegulatedMotor;
+import lejos.hardware.motor.EV3MediumRegulatedMotor;
+import lejos.hardware.port.MotorPort;
+import lejos.robotics.RegulatedMotor;
+import lejos.robotics.geometry.Line;
+import lejos.robotics.geometry.Rectangle;
+import lejos.robotics.navigation.DifferentialPilot;
+import lejos.robotics.navigation.Navigator;
+import lejos.robotics.navigation.Pose;
+import lejos.robotics.navigation.Waypoint;
+import lejos.robotics.pathfinding.FourWayGridMesh;
+import lejos.robotics.pathfinding.Node;
+import lejos.robotics.pathfinding.Path;
+import lejos.robotics.pathfinding.ShortestPathFinder;
+import lejos.utility.Delay;
+import lejos.robotics.mapping.LineMap;
+
+public class Main { // Robotin pääohjelma
+
+	public static void main(String[] args) {
+
+		final double HALKAISIJA = 3.15;
+		final double RAIDELEVEYS = 18.70;
+
+		RegulatedMotor X = new EV3LargeRegulatedMotor(MotorPort.A); // Moottoreiden alustus.
+		RegulatedMotor Y = new EV3LargeRegulatedMotor(MotorPort.B);
+		RegulatedMotor C = new EV3MediumRegulatedMotor(MotorPort.C);
+		Waypoint wp = new Waypoint(0, 0);
+
+		X.setSpeed(100);
+		Y.setSpeed(100);
+		C.setSpeed(100);
+
+		Socket s = null; // Soketin alustus
+		try {
+			ServerSocket serveri = new ServerSocket(1111);
+			s = serveri.accept();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+		DataInputStream ins = null; // Input ja output stream olioiden alustus
+		DataOutputStream outs = null;
+		try {
+			ins = new DataInputStream(s.getInputStream());
+			outs = new DataOutputStream(s.getOutputStream());
+		} catch (IOException e1) {
+			e1.printStackTrace();
+		}
+		DataIn in = new DataIn(ins); // DataIn säikeen luonti
+		DataOut out = new DataOut(outs); // DataOut out olion luonti
+		Stop in2 = new Stop();
+		in.start(); // DataIn in säikeen käynnistys
+		
+
+		try {
+			in.join();
+			in2.start();
+			
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} 
+		ArrayList<Waypoint> pisteet = new ArrayList<Waypoint>();
+		double currentX = 0;
+		double currentY = 0;
+		pisteet = in.returnPisteet();
+		Waypoint nosto = new Waypoint(-1.0, -1.0);
+		Waypoint nosto2 = new Waypoint(1000.0, 1000.0);
+		boolean rotated = false;
+		for (Waypoint a : pisteet) {
+			if (a.getX() < 999.0) {
+
+				X.rotateTo((int) a.getX());
+				X.waitComplete();
+				Y.rotateTo((int) a.getY() * (-1));
+				Y.waitComplete();
+				if((C.getTachoCount() > 22 && C.getTachoCount() < 27) && rotated == false) {
+				C.rotateTo(-12);
+				rotated=true;
+				}
+				
+			} else {
+				C.rotateTo(25);
+				
+				rotated=false;
+			}
+	
+		}	C.rotateTo(0);
+		System.out.println("nachoballs");
+		/*
+		 * try { //sulkee input ja output streamit ja lopettaa säikeen. in.lopeta();
+		 * out.lopeta(); ins.close(); outs.close(); } catch (IOException e) { // TODO
+		 * Auto-generated catch block e.printStackTrace(); }
+		 */
+
+	}
+
+}
